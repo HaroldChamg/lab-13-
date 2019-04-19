@@ -1,0 +1,157 @@
+---
+title: "lab 13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+death <- read_csv("death.csv")
+new<- read_csv("new.csv")
+death
+new
+```
+```{r}
+deathnew <-death %>%
+  left_join(new, by = "country")
+deathnew
+```
+
+
+
+```{r}
+deathnew_1 <- death %>% 
+  gather('1990', '1991', '1992','1993','1994','1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009' ,'2010','2011',key = "Year", value = "Deathnumber")
+deathnew_2 <- new %>% 
+  gather('1990', '1991', '1992','1993','1994','1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009' ,'2010','2011',key = "Year", value = "Diagnosed")
+
+```
+
+```{r}
+deathnew_1
+deathnew_2
+```
+
+My hypotheses: Countries that have the most death report due to AIDS are getting better and better over the years. Countries that have the least death report are getting worse over the years.
+
+
+
+First step: figure out what countries bothered the most by AIDS, South Africa is the answer
+
+```{r}
+deathnew_1%>%
+group_by(country)%>%
+summarise(AVG_Death = mean(Deathnumber))%>%
+arrange(desc(AVG_Death))
+
+```
+
+What countires were bothered the least by AIDS, Austria is the answer.
+
+```{r}
+deathnew_1%>%
+group_by(country)%>%
+summarise(AVG_Death = mean(Deathnumber))%>%
+arrange((AVG_Death))
+```
+
+
+```{r}
+SA<-filter(deathnew_1,country =="South Africa")
+SA
+```
+
+```{r}
+AUS<-filter(deathnew_1,country =="Austria")
+AUS
+```
+
+```{r}
+ggplot(data= SA)+
+  geom_jitter(mapping = aes(x= Year,y=Deathnumber))
+ggplot(data= AUS)+
+  geom_jitter(mapping = aes(x= Year,y=Deathnumber))
+
+```
+
+According to my analysis, Austria's death rate due to HIV is pretty standard, there was no significant ups and down from the chart. However, for south Africa, it is very pleasing to see that after 2006, 2007 the death from HIV had been consistently went down until 2011. I think this is because the medical technique has been improving a lot in Africa. Diagnosed with HIV is no loner equal to death.
+
+
+
+
+
+```{r}
+datadeath <- deathnew_1 %>%
+  select(Deathnumber) %>%
+  drop_na()
+
+deathnew_1 <- deathnew_1 %>%
+  drop_na(Deathnumber)
+
+values <- deathnew_1$Deathnumber
+
+perm_mean <- function(perms = 1000, values, n1)
+  
+{
+  vec <- rep(0,perms)
+  
+  for (i in c(1:perms))
+  {
+  
+    test <- sample(1:length(values), 1566, replace = FALSE)
+    
+    group1 <- values[test]
+    group2 <- values[-test]
+  
+    
+    m1 = mean(group1)
+    m2 = mean(group2)
+    
+    difmean = m1 -m2
+    vec[[i]] <- difmean
+  }
+  
+  return(vec)
+}
+```
+
+
+
+```{r}
+test1 <- perm_mean(1000, values, 1566)
+
+test <- as.tibble(test1)
+
+ggplot(data = test, aes(x = value))+
+  geom_histogram()+
+  geom_vline(xintercept = 185599, color = 'blue')+
+  coord_cartesian(xlim = c(-190000, 190000), ylim = c (0, 1))
+```
+
+
+
+My Null hypothesis is whether South Africa has worse HIV death rate than Austria? 
+The chart look a little weird just because the average death report from South Africa is dominent the death report from Austria. So it's an obvious 100% from the 1000 times testing.
+
+
+
+```{r}
+summarise(SA, avg = mean(Deathnumber))
+
+```
+
+```{r}
+summarise(AUS, avg = mean(Deathnumber))
+```
+
+```{r}
+185659-60
+```
+
