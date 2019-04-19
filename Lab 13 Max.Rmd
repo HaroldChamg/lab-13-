@@ -1,0 +1,73 @@
+---
+title: "Lab 13"
+author: "Max Ward"
+date: "4/17/2019"
+output: html_document
+---
+
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(stringr)
+library(tibble)
+dataLab13 <- read_csv("hiv_deaths_in_children_1_59_months_total_deaths.csv")
+view(dataLab13)
+```
+Testing with an alpha level of .05 to see if the data is significant. If it matters what countries are matched up and their infant deaths from HIV over 26 years.
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+perm_cor <- function(perms = 999, x, y)
+{
+  zero_vector = numeric(999)
+  for (i in c(1:perms))
+  {
+    mix_y= sample(y, length(y), replace=FALSE)
+    corr = cor(x, mix_y)
+    zero_vector[i] = (corr)
+  }
+  return(zero_vector)
+}
+```
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+Lab13 = perm_cor(perms=999,dataLab13$'1990', dataLab13$'2016')
+```
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+swag = cor(dataLab13$'1990', dataLab13$'2016')
+```
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+m2 <- as_tibble(Lab13)
+```
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+q <- sum(m2 > swag)
+```
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+ggplot(data = m2)+
+  geom_histogram(mapping = aes(x= Lab13))+
+  geom_vline(xintercept = swag, color = 'blue') +
+  ggtitle('Test Between 1990 and 2016')
+```
+
+As we can see from the graph there is a significance in the order that the data is in, it is an extreme value. This means that there is a stronger positive correlation by country by year and it is not just random. Sad to say that as the years go on more infants are dying from HIV. This could be becuase there are just more babies being born or it could be becuase HIV is spreading rapidly in the developing countries. Either way it is clear it is a growing issue and it must be adressed and hopfully we can bring the numbers down. 
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+pval <- q/1000
+pval
+```
+Since the P-value is lower than the alpha then we can reject the null hypothesis making the data significant. 
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+man13 <- dataLab13 %>%
+  map_dbl(mean)
+```
+```{r,echo=FALSE,message = FALSE, warning=FALSE}
+names(man13)[1]<-"Year"
+man13
+```
+From the chart above you can see that the averages over all the countries shows that the mean of all the deaths per year is rising. 
+
+###Questions
+* I am answering the question "Are infant deaths on the rise because of HIV?" This will help answer the overall question of how to impove life expectancy.
+
+* For the map function it was just to show that the mean number of deathes over many years and over all major countries is on the rise. The function I worte was to run as many tests as you want. 
+
+* Null hypotheses = there is no statistical difference in the number of deathes per year by country. 
+
+* Alterante hypotheses = There is a statistical difference 
+
