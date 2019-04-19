@@ -1,0 +1,113 @@
+---
+title: "Lucas Lab 13"
+author: "Lucas Brack"
+date: "April 18, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+
+
+
+```
+
+#Does BMI effect life expectancy?
+  This will help show what cause death world wide because BMI is how much body fat a person has. This will tell us if body fat percentage has an effect on life expectancy. The null hypothesis is that there is no effect. The alternative is that life expectancy is affected by BMI. I test this by doing a pemutation test.
+
+
+```{r, results='hide',warning=F, message=FALSE}
+bmi<-read_csv("Male_BMI.csv")%>%
+  filter(Country=="United States" | Country=="Venezuela")%>%
+  select(Country,`1980`:`2008`)%>%
+  gather(`1980`: `2008`, key = year, value = BMI)
+bmi
+life_exp<-read_csv("Life_exP_at_birth.csv")%>%
+  filter(`Life expectancy`=="United States" | `Life expectancy`=="Venezuela")%>%
+  select("Life expectancy",`1980`:`2008`)%>%
+  gather(`1980`: `2008`, key = year, value = Life_exp)
+  colnames(life_exp)[1]<-"Country"
+life_exp
+col_mean <- function(df) {
+  #Map function that return mean of a column
+  output <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    output[i] <- mean(df[[i]])
+  }
+  output
+}
+mean_bmi<-function(input){
+  bmi1<-bmi%>%
+  filter(Country==input)%>%
+  select(BMI)
+  bmi1
+  return(bmi1)
+}
+
+mean_life_exp<-function(input){
+  life_exp1<-life_exp%>%
+  filter(Country==input)%>%
+  select(Life_exp)
+  life_exp1
+  col_mean(life_exp1)
+}
+```
+
+```{r,warning=F, message=FALSE}
+bmi_mean=map_dbl(mean_bmi("United States"),mean)-map_dbl(mean_bmi("Venezuela"),mean)#Map function that calculates the mean for BMI
+bmi_mean
+mean_life_exp("United States")-mean_life_exp("Venezuela")
+```
+
+```{r, results='hide',warning=F, message=FALSE}
+perm_mean <- function(perms = 1000, values, n1){
+  ## Variables ##
+  # perms: The number of permutations 
+  # values (num): 
+  # n1 (int): Size of group 1
+  ###############
+  
+  # Step 1: Create vector of zeroes of length "perms" to store permuted mean differnces
+  
+  zero_vector=numeric(1000)
+  
+  # Loop throught number of permutations
+  for (i in c(1:perms)){
+    # Step 2:Randomly separate vector "values" into disjoint groups of size "n1" and "length(values) - n1" respectively
+    groups<-sample(values,length(values), replace = FALSE)
+    
+    group1<-groups[1:n1]
+    group2<-groups[1+n1:length(values)-1]
+    
+    # Step 3: Compute the sample means for the two groups from step 2
+    mean_group1<-mean(group1)
+
+    mean_group2<-mean(group2)
+    
+    # Step 4:  Compute the difference in sample means, store the value in the vector from step 1
+    zero_vector[i]=(mean_group2-mean_group1)
+  }
+  return(zero_vector)
+  
+}
+```
+
+```{r, results='hide'}
+mean_b<-enframe(perm_mean(perms = 1000, bmi$BMI, 10))
+                
+```
+
+```{r,warning=F, message=FALSE}
+bmi_mean
+quantile(mean_b$value, c(.99))
+```
+
+```{r,warning=F, message=FALSE}
+
+ggplot(data=mean_b)+
+  geom_histogram(mapping = aes(x=value),fill="red")+
+  geom_vline(xintercept=bmi_mean, color="blue")
+```
+
+The graph shows that data is in the 99.9%tile, which means that there is a life expectancy is affected by BMI, which makes the null hypothesis incorrect. Since the United States has a higher BMI and life expectancy, this means the countries with higher average BMI should have a higher life expectancy.
